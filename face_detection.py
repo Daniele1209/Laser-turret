@@ -1,4 +1,6 @@
 import cv2
+import time
+from serial import Serial
 
 # import model
 face_cascade = cv2.CascadeClassifier('models/haarcascade_frontalface_default.xml')
@@ -21,6 +23,10 @@ def get_max_rect(faces):
 
 def apply_detection(cap):
 
+    arduino = Serial('COM3', 9600)
+    time.sleep(2)
+    print("Connection to arduino...")
+
     while True:
         _, img = cap.read()
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -33,6 +39,15 @@ def apply_detection(cap):
         if x and y:
             hit_point = get_hit_point((x, y, w, h))
             cv2.circle(img, hit_point, 1, (0, 0, 255), 3)
+            try:
+                data = "X{0:d}Y{1:d}Z".format((hit_point[0]+50), (hit_point[1]))
+                print ("output = '" +data+ "'")
+                arduino.write(str.encode(data))
+            except:
+                print("Err")
+                arduino.close()
+                break
+        
         # Display
         cv2.imshow('img', img)
         # Stop if escape key is pressed
@@ -41,3 +56,4 @@ def apply_detection(cap):
             break
     # Release the VideoCapture object
     cap.release()
+    arduino.close() 
